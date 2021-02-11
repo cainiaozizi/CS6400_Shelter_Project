@@ -1,0 +1,10 @@
+Steps to run mysql:
+1)	Go to the very folder: SQLData, then open a ternmial
+2)	systemctl status mysql.service
+if not active, systemctl start mysql.service
+3)	sudo mysql -u root –p
+4)	123, 12345, Or 123456
+5)	Then it goes to mysql, like mysql>
+6)	source 0.sql; source 1.sql; source 2.sql; source 3.sql; source 4.sql; source 5.sql; source 6.sql; source 8.sql;
+this command will build the database for you!
+

@@ -1,0 +1,55 @@
+README for folder Phase 3: there are three main folders relating to phase 3 deliverables. 1) Flask (for backend), 2) SQL Data (for insertion of test data); 3) vue_project (for frontend)
+
+- Flask: this folder contains all flask API files. We use the flask restfull, a python framework to implement our API server and mysql for database. 
+
+The main flask app file: app.py, which references to APIs listed below:
+
+app.py
+connection_inf.py (info to connect mysql)
+
+1. Users related:
+	user.py
+	security.py
+	volunteer.py
+	reports.py
+	RoleCheck.py (API to check if the current user is admin)
+
+2. Dog related:
+	add_dog.py
+	allbreeds.py
+	dog_dashboard.py
+	edit_dog.py
+
+3. Expenses related:
+	expense.py
+
+4. Application related:
+	adoptionapplication.py
+	applicant.py
+	applicationReview.py
+
+5. Adoption related: 
+	add_adoption.py
+
+
+- SQL Data load: this folder contains all sql files which implement database schema and insert all the testing data provided by the course.
+
+1. 00-Project Database & Schema.sql
+2. 01-Users SQL input.sql
+3. 02-Applications SQL input.sql
+4. 03-Dog SQL input.sql
+5. 04-Expense SQL input.sql
+6. 05-Adoption SQL input.sql
+7. 06-Data Transform.sql
+8. 08-Createviews.sql
+
+- vue_project: this folder contains all files for the frontend, excluding the supported modules, because github doesn't allow us to upload more than 100 files and the amount of files in node_module exceed the limit.
+
+1. public: index.html and icon file
+2. src: contains all the vue components
+3. babel.config.js
+4. package-lock.json
+5. package.json
+
+- SQL Query Summary
+A summary of the SQL code used in flask backend (Python files)

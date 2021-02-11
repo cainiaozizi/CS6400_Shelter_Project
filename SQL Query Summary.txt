@@ -1,0 +1,275 @@
+
+From RoleCheck.py
+
+select_query = "SELECT email_address FROM Mo WHERE email_address=%s"
+cursor.execute(select_query, (current_identity.username,))
+
+
+From add_dog.py
+sql_query_check_microchip_ID = "SELECT IF (EXISTS (SELECT 1 FROM Dog WHERE microchip_ID = %s), 1, 0) "
+mycursor.execute(sql_query_check_microchip_ID, (microchip_ID,))
+
+ql_query = "INSERT INTO Dog (dog_name, sex, alteration_status, date_of_birth, description, \
+                microchip_ID, surrender_date, surrender_reason, surrendered_by_animal_control, \
+                email_address, adoptability_status) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        vals = (dog_name, sex, alteration_status, date_of_birth, description, microchip_ID,\
+        surrender_date, surrender_reason, surrendered_by_animal_control, current_identity.username, adoptability_status)
+        mycursor.execute(sql_query, vals)
+
+sql_query_get_dogID = "SELECT max(dog_ID) FROM Dog"
+        mycursor.execute(sql_query_get_dogID)
+        dog_ID = mycursor.fetchone()[0] #fetchone return a tuple
+
+sql_query_breed = "INSERT INTO DogBreed (dog_ID, breed_name) VALUES (%s, %s)"
+
+mycursor.execute(sql_query_breed, (dog_ID, breed))
+
+
+From addadoption.py
+
+select_query = "SELECT DISTINCT AP.last_name, AP.first_name,AP.email_address, AP.street, AP.city, AP.state, AP.zip_code, AP.phone_number, AA.coapplicant_last_name, AA.coapplicant_first_name " \
+                       "FROM Applicant AS AP" \
+                       " INNER JOIN AdoptionApplication AS AA ON AA.email_address = AP.email_address" \
+                       " WHERE (AA.coapplicant_last_name LIKE %s OR AP.last_name LIKE %s) AND AA.application_ID IN ( SELECT application_ID FROM ApprovedApplication);"
+
+        cursor.execute(select_query, ("%"+last_name+"%", "%"+last_name+"%"))
+
+find_query = "SELECT MAX(application_ID) FROM AdoptionApplication" \
+                       " WHERE email_address = %s AND application_ID IN" \
+                       " (SELECT application_ID FROM ApprovedApplication);"
+
+        cursor.execute(find_query, (Applicant_email,))
+
+select_query = "SELECT AA.application_ID, AA.application_date, AP.last_name, AP.first_name, AP.email_address, AA.coapplicant_last_name, AA.coapplicant_first_name " \
+                       "FROM Applicant AS AP " \
+                       "INNER JOIN AdoptionApplication AS AA ON AA.email_address = AP.email_address" \
+                       " WHERE AA.application_ID = %s;"
+
+        cursor.execute(select_query, (applicationID[0],))
+
+find_query = "SELECT dog_ID, dog_name FROM Dog WHERE dog_ID = %s;"
+
+        cursor.execute(find_query, (dog_ID,))
+
+select_query = "SELECT CASE" \
+                       " WHEN surrendered_by_animal_control = 1 THEN adoption_expense * 0.15" \
+                       " WHEN surrendered_by_animal_control = 0 THEN adoption_expense *1.15" \
+                       " END AS adoption_fee " \
+                       "FROM " \
+                       "(SELECT SUM(EXP.amount) AS adoption_expense, EXP.dog_ID, DG.surrendered_by_animal_control " \
+                       "FROM Expense AS EXP " \
+                       "INNER JOIN Dog AS DG ON DG.dog_ID = EXP.dog_ID " \
+                       "WHERE DG.dog_ID = %s GROUP BY DG.dog_ID)" \
+                       " AS fee;"
+
+        cursor.execute(select_query, (dog_ID,))
+
+adoption_query = "INSERT INTO Adoption (adoption_date, adoption_fee, dog_ID, application_ID) VALUES (%s, %s, %s, %s);"
+        cursor.execute(adoption_query, (data["adoption_date"], data["adoption_fee"], data["dog_ID"], data["application_ID"]))
+
+update_state_query = "UPDATE Dog SET adoptability_status = 'Adopted' WHERE dog_ID = %s"
+        cursor.execute(update_state_query, (data["dog_ID"],))
+
+
+From adoptionapplication.py
+
+query = "INSERT INTO AdoptionApplication (coapplicant_last_name, coapplicant_first_name, application_date, application_state, email_address) VALUES (%s, %s, %s, %s, %s)"
+        cursor.execute(query, (data['coapplicant_last_name'], data['coapplicant_first_name'], data['application_date'],0 ,email_address))
+
+query = "SELECT MAX(application_ID) FROM AdoptionApplication"
+        cursor.execute(query)
+        result = cursor.fetchone()
+
+
+From allbreeds.py
+
+sql_query_get_breeds = "SELECT breed_name FROM Breed"
+        mycursor.execute(sql_query_get_breeds)
+
+
+From applicant.py
+
+select_query = "SELECT last_name, first_name, email_address,phone_number, street, city, state, zip_code FROM applicant WHERE email_address = %s"
+        cursor.execute(select_query, (email_address,))
+
+query = "INSERT INTO applicant(email_address,last_name, first_name, street, city, state, zip_code, phone_number) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)"
+        cursor.execute(query, (email_address, data['last_name'], data['first_name'], data['street'], data['city'], data['state'], data['zip_code'], data['phone_number']))
+
+
+From applicationReview.py
+
+query = "SELECT AA.application_ID, AA.application_Date, AA.coapplicant_last_name, AA.coapplicant_first_name, AP.email_address, AP.last_name, AP.first_name, AP.street, AP.city, AP.state, AP.zip_code, AP.phone_number" \
+                " FROM AdoptionApplication AS AA INNER JOIN Applicant AS AP ON AA.email_address = AP.email_address WHERE AA.application_state = 0;"
+        cursor.execute(query)
+
+query = "SELECT AA.application_ID, AA.application_date, AA.coapplicant_last_name, AA.coapplicant_first_name, AP.email_address, AP.last_name, AP.first_name, AP.street, AP.city, AP.state, AP.zip_code, AP.phone_number FROM AdoptionApplication AS AA INNER JOIN Applicant AS AP ON AA.email_address = AP.email_address WHERE AA.application_ID = %s;"
+        cursor.execute(query, (ApplicationID,))
+
+approve_query = "INSERT INTO ApprovedApplication (application_ID) VALUES (%s);"
+        cursor.execute(approve_query, (ApplicationID,))
+
+update_state_query = "UPDATE AdoptionApplication SET application_state = 1 WHERE application_ID = %s;"
+        cursor.execute(update_state_query, (ApplicationID,))
+
+reject_query = "INSERT INTO RejectedApplication (application_ID) VALUES (%s);"
+        cursor.execute(reject_query, (ApplicationID,))
+
+update_state_query = "UPDATE AdoptionApplication SET application_state = 1 WHERE application_ID = %s;"
+        cursor.execute(update_state_query, (ApplicationID,))
+
+
+From dog_dashboard.py
+
+sql_query_get_dogs = "SELECT dog_ID, dog_name, breed_name, sex, alteration_status, age, surrender_date, adoptability_status FROM dashboardView"
+            mycursor.execute(sql_query_get_dogs)
+
+sql_query_get_dog = "SELECT dog_ID, dog_name, sex, alteration_status, date_of_birth, description, microchip_ID, surrender_date, \
+            surrender_reason, surrendered_by_animal_control, adoptability_status, email_address FROM Dog WHERE dog_ID = %s"
+        mycursor.execute(sql_query_get_dog, (dog_ID,))
+
+sql_query_get_breed = "SELECT GROUP_CONCAT(DISTINCT breed_name ORDER BY breed_name ASC SEPARATOR '/') AS BreedNames FROM DogBreed WHERE dog_ID = %s"
+        mycursor.execute(sql_query_get_breed, (dog_ID,))
+
+
+From edit_dog.py
+
+sql_query_get_dog = "SELECT dog_ID, dog_name, sex, alteration_status, date_of_birth, description, microchip_ID, surrender_date, \
+            surrender_reason, surrendered_by_animal_control, adoptability_status, email_address FROM Dog WHERE dog_ID = %s"
+        mycursor.execute(sql_query_get_dog, (dog_ID,))
+
+sql_query_get_breed = "SELECT GROUP_CONCAT(DISTINCT breed_name ORDER BY breed_name ASC SEPARATOR '/') AS BreedNames FROM DogBreed WHERE dog_ID = %s"
+        mycursor.execute(sql_query_get_breed, (dog_ID,))
+
+sql_query_get_dog = "SELECT dog_ID, sex, alteration_status, microchip_ID FROM Dog WHERE dog_ID = %s"
+        mycursor.execute(sql_query_get_dog, (dog_ID,))
+
+sql_query_get_breed = "SELECT GROUP_CONCAT(DISTINCT breed_name ORDER BY breed_name ASC SEPARATOR '/') AS BreedNames FROM DogBreed WHERE dog_ID = %s"
+        mycursor.execute(sql_query_get_breed, (dog_ID,))
+
+sql_query_delete_breed = "DELETE FROM DogBreed WHERE dog_ID = %s"
+            mycursor.execute(sql_query_delete_breed, (dog_ID,))
+
+sql_query_insert_breed = "INSERT INTO DogBreed (dog_ID, breed_name) VALUES (%s, %s)"
+
+mycursor.execute(sql_query_insert_breed, (dog_ID, breed))
+
+sql_query_update_sex = "UPDATE Dog SET sex = %s WHERE dog_ID = %s"
+            mycursor.execute(sql_query_update_sex, (sex, dog_ID))
+
+sql_query_update_alteration_status = "UPDATE Dog SET alteration_status = %s WHERE dog_ID = %s"
+            mycursor.execute(sql_query_update_alteration_status, (alteration_status, dog_ID))
+
+sql_query_update_microchip_ID = "UPDATE Dog SET microchip_ID = %s WHERE dog_ID = %s"
+            mycursor.execute(sql_query_update_microchip_ID, (microchip_ID, dog_ID))
+
+sql_query_updated_dog = "SELECT alteration_status, microchip_ID, sex FROM Dog WHERE dog_ID = %s"
+            mycursor.execute(sql_query_updated_dog, (dog_ID,))
+
+sql_query_update_adoptability = "UPDATE Dog SET adoptability_status = IF(((%s = 1) AND (%s IS NOT NULL) AND (%s != 'unknown')), 'Available', 'Not Available')
+
+mycursor.execute(sql_query_update_adoptability, (updated_alteration_status, updated_microchip_ID, updated_sex, dog_ID))
+
+
+From expense.py
+
+sql_query_get_expense = "SELECT expense_date, vendor_name, amount, description, dog_ID FROM Expense WHERE dog_ID = %s"
+        mycursor.execute(sql_query_get_expense, (dog_ID,))
+
+sql_query_check_uniqueness = "SELECT IF (EXISTS (SELECT 1 FROM Expense WHERE expense_date = %s AND vendor_name = %s AND dog_ID = %s), 1, 0)"
+        mycursor.execute(sql_query_check_uniqueness, (expense_date, vendor_name, dog_ID))
+
+sql_query_check_date1 = "SELECT IF ((%s < (SELECT surrender_date FROM Dog WHERE dog_ID = %s)), 1, 0) "
+        mycursor.execute(sql_query_check_date1, (expense_date, dog_ID))
+
+sql_query_check_date2 = "SELECT IF ((EXISTS (SELECT 1 FROM Adoption WHERE dog_ID = %s)) AND \
+            (%s > (SELECT adoption_date FROM Adoption WHERE dog_ID = %s)), 1, 0)"
+        mycursor.execute(sql_query_check_date2, (dog_ID, expense_date, dog_ID))
+
+sql_query_check_vendor = "SELECT IF (EXISTS (SELECT 1 FROM Vendor WHERE vendor_name = %s), 1, 0)"
+        mycursor.execute(sql_query_check_vendor, (vendor_name,))
+
+sql_query_insert_vendor = "INSERT INTO Vendor (vendor_name) VALUES (%s)"
+            mycursor.execute(sql_query_insert_vendor, (vendor_name,))
+
+ sql_query_insert_expense = "INSERT INTO Expense (dog_ID, vendor_name, expense_date, amount, description) \
+            VALUES (%s, %s, %s, %s, %s)"
+        mycursor.execute(sql_query_insert_expense, (dog_ID, vendor_name, expense_date, amount, description))
+
+
+From reports.py
+
+sql_query_animal_control_report_col1 = "SELECT num_of_dogs, year_month_sur FROM AnimalControlReportSurrenderDogsView"
+        mycursor.execute(sql_query_animal_control_report_col1)
+
+sql_query_animal_control_report_col2 = "SELECT num_of_adopted_dogs_over60days, year_month_ado FROM AnimalControlReportOver60DaysView"
+        mycursor.execute(sql_query_animal_control_report_col2)
+
+sql_query_animal_control_report_col3 = "SELECT expense_amount, year_month_exp FROM AnimalControlReportExpenseAmountView"
+        mycursor.execute(sql_query_animal_control_report_col3)
+
+sql_query_animal_control_report_detail1 = "SELECT d.dog_ID, d.sex, d.alteration_status, d.microchip_ID, d.surrender_date, db.breed_name \
+                                                    FROM Dog AS d INNER JOIN ( \
+                                                    SELECT dog_ID, GROUP_CONCAT(breed_name ORDER BY breed_name ASC SEPARATOR '/') AS breed_name \
+                                                  FROM DogBreed \
+                                                  GROUP BY dog_ID ) AS db ON d.dog_ID = db.dog_ID \
+                                                WHERE d.surrendered_by_animal_control = 1 AND EXTRACT(YEAR_MONTH FROM d.surrender_date) = %s  \
+                                                 ORDER BY d.dog_ID ASC"
+
+        # sql_query_animal_control_report_detail1 = "SELECT dog_ID, sex, alteration_status, microchip_ID, surrender_date, breed_name FROM AnimalControlReportDetailView1"
+        mycursor.execute(sql_query_animal_control_report_detail1, (int(year_month),))
+
+sql_query_animal_control_report_detail2 = "SELECT d.dog_ID, d.sex, d.alteration_status, d.microchip_ID, d.surrender_date, db.breed_name,\
+                                                    DATEDIFF(Adoption.adoption_date, d.surrender_date) AS days_in_rescue \
+                                                      FROM Dog AS d LEFT JOIN (\
+                                                          SELECT dog_ID, GROUP_CONCAT(breed_name ORDER BY breed_name ASC SEPARATOR '/') AS breed_name\
+                                                          FROM DogBreed\
+                                                          GROUP BY dog_ID ) AS db\
+                                                      ON d.dog_ID = db.dog_ID INNER JOIN Adoption On d.dog_ID = Adoption.dog_ID\
+                                                      WHERE d.surrendered_by_animal_control = 1 AND EXTRACT(YEAR_MONTH FROM Adoption.adoption_date) = %s \
+                                                       AND DATEDIFF(Adoption.adoption_date, d.surrender_date) >=60 \
+                                                      ORDER BY days_in_rescue DESC, d.dog_ID DESC"
+
+        # sql_query_animal_control_report_detail2 = "SELECT dog_ID, sex, alteration_status, microchip_ID, surrender_date, breed_name, days_in_rescue FROM AnimalControlReportDetailView2"
+        mycursor.execute(sql_query_animal_control_report_detail2, (int(year_month),))
+
+sql_query_adoption_report = """ SELECT EXTRACT(YEAR_MONTH FROM adoption_date) AS adoption_month, db.breed_name, COUNT(d.dog_ID) AS num_of_dog_surrender, 
+                                      COUNT(a.dog_ID) AS num_of_dog_adopted, SUM(e.total_expense) AS sum_dog_expense, SUM(a.adoption_fee) AS sum_adoption_fee, (SUM(a.adoption_fee) - SUM(e.total_expense)) 
+                                      AS net_profit 
+                                      FROM Dog AS d INNER JOIN (
+                                          SELECT dog_ID, GROUP_CONCAT(breed_name ORDER BY breed_name ASC SEPARATOR '/') AS breed_name
+                                          FROM DogBreed
+                                          GROUP BY dog_ID) AS db ON d.dog_ID = db.dog_ID 
+                                      INNER JOIN Adoption AS a ON d.dog_ID = a.dog_ID
+                                      INNER JOIN (
+                                        SELECT dog_ID, SUM(amount) as total_expense
+                                        FROM Expense
+                                        GROUP BY dog_ID) AS e ON d.dog_ID = e.dog_ID 
+                                      WHERE PERIOD_DIFF(EXTRACT(YEAR_MONTH FROM CURDATE()), EXTRACT(YEAR_MONTH FROM a.adoption_date)) <=12 
+                                      GROUP BY adoption_month, db.breed_name
+                                      ORDER BY adoption_month, db.breed_name ASC;"""
+        mycursor.execute(sql_query_adoption_report)
+
+sql_query_expense_report = "SELECT vendor_name, total FROM ExpenseAnalysisReportView"
+        mycursor.execute(sql_query_expense_report)
+
+
+From user.py
+
+select_query = "SELECT id,email_address,password FROM user WHERE email_address=%s"
+
+        cursor.execute(select_query, (email_address,))
+
+select_query = "SELECT id,email_address,password FROM user WHERE id=%s"
+
+        cursor.execute(select_query, (_id,))
+
+select_query = "SELECT email_address FROM Mo WHERE email_address=%s"
+
+        cursor.execute(select_query, (username,))
+
+
+From volunteer.py
+
+select_query = "SELECT first_name,last_name,email_address,phone_number FROM user WHERE last_name LIKE %s OR first_name LIKE %s"
+        cursor.execute(select_query, ("%"+searchname+"%", "%"+searchname+"%"))
+
